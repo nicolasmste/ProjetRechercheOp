@@ -1,7 +1,7 @@
 import copy
 import sys
 import os
-
+import random
 # Constante pour gérer la dégénérescence (valeur très petite considérée comme 0 mais basique)
 EPSILON = 1e-9
 
@@ -78,8 +78,32 @@ class ProblemeDeTransport:
         except Exception as e:
             print(f"Erreur lecture fichier : {e}")
 
-    def affichage(self):
+    def generer_aleatoire(self, n):
+        """Génère un problème n x n équilibré (voir réponse précédente)"""
+        self.n = n
+        self.m = n
+        self.couts = [[random.randint(1, 100) for _ in range(n)] for _ in range(n)]
+        
+        # Matrice temp pour l'équilibre
+        temp = [[random.randint(1, 100) for _ in range(n)] for _ in range(n)]
+        self.provisions = [sum(row) for row in temp]
+        self.commandes = [sum(temp[i][j] for i in range(n)) for j in range(n)]
+        
+        self.reset_solution()
+        print(f"Problème {n}x{n} généré.")
+
+    def reset_solution(self):
+        """Remet à zéro la proposition et les calculs intermédiaires"""
+        self.proposition = [[0.0 for _ in range(self.m)] for _ in range(self.n)]
+        self.potentiels_u = []
+        self.potentiels_v = []
+        self.marginaux = []
+
+    def affichage(self,verbose=True):
         """Affiche les tableaux de manière formatée et soignée"""
+        if not verbose:
+            return
+        
         if not self.couts:
             return
 
@@ -153,8 +177,8 @@ class ProblemeDeTransport:
 
     # --- ALGORITHMES INITIAUX ---
 
-    def nord_ouest(self):
-        print("\n[Algorithme] Nord-Ouest")
+    def nord_ouest(self, verbose=True):
+        if verbose: print("\n[Algorithme] Nord-Ouest")
         prov = list(self.provisions)
         cmd = list(self.commandes)
         self.proposition = [[0.0] * self.m for _ in range(self.n)]
@@ -177,9 +201,8 @@ class ProblemeDeTransport:
             else: #sinon c'est que les commandes qui ont été épuisées on passe à la colonne suivante
                 j += 1
 
-    def balas_hammer(self):
-        print("\n[Algorithme] Balas-Hammer (VAM) - Strict")
-
+    def balas_hammer(self, verbose=True):
+        if verbose: print("\n[Algorithme] Balas-Hammer")
         # Copies pour ne pas modifier les originaux
         prov = list(self.provisions)
         cmd = list(self.commandes)
@@ -537,7 +560,7 @@ class ProblemeDeTransport:
 
         return cycle_coords + path_edges[::-1]
 
-    def maximiser_transport_sur_cycle(self, cell_entree):
+    def maximiser_transport_sur_cycle(self, cell_entree,verbose=True):
         cycle = self.get_cycle_path(cell_entree)
         if not cycle: return
 
@@ -550,7 +573,7 @@ class ProblemeDeTransport:
 
         min_val = float('inf')
 
-        print(f" -> Cycle trouvé (longueur {len(cycle)})")
+        if verbose:print(f" -> Cycle trouvé (longueur {len(cycle)})")
 
         for k, (r, c) in enumerate(cycle):
             if k % 2 == 0:
@@ -563,7 +586,7 @@ class ProblemeDeTransport:
 
         if min_val == float('inf'): min_val = 0
 
-        print(f" -> Quantité déplacée theta = {min_val:.4g}")
+        if verbose:print(f" -> Quantité déplacée theta = {min_val:.4g}")
 
         # Mise à jour
         for r, c in plus_cells:
@@ -578,13 +601,13 @@ class ProblemeDeTransport:
             if abs(self.proposition[r][c]) < 1e-12:
                 self.proposition[r][c] = 0.0
 
-    def marche_pied_resolution(self):
+    def marche_pied_resolution(self,verbose=True):
         iteration = 0
-        max_iter = 20
+        max_iter = 500
 
         while iteration < max_iter:
             iteration += 1
-            print(f"\n################ ITÉRATION {iteration} ################")
+            if verbose:print(f"\n################ ITÉRATION {iteration} ################")
 
             # 1. Vérification / Correction Connexité
             if not self.est_connexe()[0]:
@@ -594,19 +617,19 @@ class ProblemeDeTransport:
             self.calcul_potentiels()
             min_delta, cell_in = self.calcul_couts_marginaux()
 
-            self.affichage()
+            self.affichage(verbose=verbose)
 
             if min_delta >= -1e-9:  # Optimale (tous delta >= 0)
-                print("\n>>> CRITÈRE D'OPTIMALITÉ ATTEINT : Solution Optimale trouvée.")
+                if verbose:print("\n>>> CRITÈRE D'OPTIMALITÉ ATTEINT : Solution Optimale trouvée.")
                 break
 
-            print(f"\n[Amélioration] Candidat entrée : {cell_in} avec gain marginal {min_delta}")
+            if verbose:print(f"\n[Amélioration] Candidat entrée : {cell_in} avec gain marginal {min_delta}")
 
             # 3. Modification sur cycle
             self.maximiser_transport_sur_cycle(cell_in)
 
         if iteration == max_iter:
-            print("\n[Attention] Nombre max d'itérations atteint.")
+            if verbose:print("\n[Attention] Nombre max d'itérations atteint.")
 
-        print("\n--- RÉSULTAT FINAL ---")
-        self.affichage()
+        if verbose:print("\n--- RÉSULTAT FINAL ---")
+        self.affichage(verbose=True)
