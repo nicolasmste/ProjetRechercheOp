@@ -109,8 +109,8 @@ def lancer_etude_complexite():
     print("!" * 60)
 
     # Tailles définies dans le PDF
-    tailles_n = [10, 40, 100, 400]
-    nb_runs = 50  # Nombre d'exécutions par taille (PDF demande 100)
+    tailles_n = [10, 40, 100]
+    nb_runs = 100
 
     resultats = []
 
@@ -186,8 +186,8 @@ def resoudre_probleme_interactif(pb):
     pb.affichage()
 
     print("\n--- Choix de l'algorithme initial ---")
-    print("1. Nord-Ouest (Simple, rapide, mais coût élevé)")
-    print("2. Balas-Hammer (Complexe, plus lent, mais coût proche de l'optimal)")
+    print("1. Nord-Ouest")
+    print("2. Balas-Hammer")
     choix_algo = input("Votre choix (1 ou 2) : ").strip()
 
     t_start = time.perf_counter()

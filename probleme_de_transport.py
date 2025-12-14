@@ -659,7 +659,7 @@ class ProblemeDeTransport:
 
     def marche_pied_resolution(self, verbose=True):
         iteration = 0
-        max_iter = 500  # Augmenté pour les grands problèmes de complexité
+        max_iter = 100000
 
         while iteration < max_iter:
             iteration += 1
