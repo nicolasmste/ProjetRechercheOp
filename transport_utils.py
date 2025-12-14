@@ -2,13 +2,14 @@ import sys
 import time
 import random
 import csv
+import contextlib
 from copy import deepcopy
 
 # Import de la classe métier
 try:
     from probleme_de_transport import ProblemeDeTransport
 except ImportError:
-    print("ERREUR CRITIQUE : Le fichier 'ProblemeDeTransport.py' est introuvable.")
+    print("ERREUR CRITIQUE : Le fichier 'probleme_de_transport.py' est introuvable.")
     sys.exit(1)
 
 
@@ -43,6 +44,62 @@ def generer_probleme_transport_obj(n, m):
     return pb
 
 
+def generer_trace_execution(pb, algo_choix, nom_fichier):
+    """
+    Exécute la résolution complète (Initialisation + Marche-Pied)
+    et redirige TOUTE la sortie console (print) vers un fichier texte.
+
+    Args:
+        pb (ProblemeDeTransport): L'objet problème chargé.
+        algo_choix (str): '1' pour Nord-Ouest, '2' pour Balas-Hammer.
+        nom_fichier (str): Chemin du fichier de sortie (ex: NEW2-4-trace5-no.txt).
+    """
+    print(f"[INFO] Génération de la trace dans '{nom_fichier}' en cours...")
+
+    try:
+        # On ouvre le fichier en écriture
+        with open(nom_fichier, 'w', encoding='utf-8') as f:
+            # On redirige stdout (la console) vers ce fichier
+            with contextlib.redirect_stdout(f):
+                print("=" * 60)
+                print(f"TRACE D'EXÉCUTION GÉNÉRÉE AUTOMATIQUEMENT")
+                print(f"Fichier cible : {nom_fichier}")
+                print(f"Algorithme Initial : {'Nord-Ouest' if algo_choix == '1' else 'Balas-Hammer'}")
+                print("=" * 60 + "\n")
+
+                # 1. Affichage Données
+                pb.affichage()
+
+                # 2. Algo Initial
+                t_start = time.perf_counter()
+                if algo_choix == '2':
+                    pb.balas_hammer(verbose=True)
+                else:
+                    pb.nord_ouest(verbose=True)
+                t_end = time.perf_counter()
+
+                print(f"\n[Temps Initialisation] {t_end - t_start:.6f} secondes")
+                print("\n--- Proposition Initiale ---")
+                pb.affichage()
+
+                # 3. Optimisation
+                print("\n" + "=" * 40)
+                print(" Lancement de l'optimisation (Marche-Pied)")
+                print("=" * 40)
+
+                t_start = time.perf_counter()
+                pb.marche_pied_resolution(verbose=True)
+                t_end = time.perf_counter()
+
+                print(f"\n[Temps Optimisation] {t_end - t_start:.6f} secondes")
+                print("\n--- FIN DE LA TRACE ---")
+
+        print(f"[SUCCÈS] Trace sauvegardée dans '{nom_fichier}'.")
+
+    except Exception as e:
+        print(f"[ERREUR] Échec de la génération de trace : {e}")
+
+
 def lancer_etude_complexite():
     """
     Lance le benchmark sur différentes tailles de problèmes et enregistre les résultats dans un CSV.
@@ -52,8 +109,7 @@ def lancer_etude_complexite():
     print("!" * 60)
 
     # Tailles définies dans le PDF
-    # Note : N=400 commence à prendre du temps, N=1000+ est très long en Python pur
-    tailles_n = [10, 40, 100]
+    tailles_n = [10, 40, 100, 400]
     nb_runs = 50  # Nombre d'exécutions par taille (PDF demande 100)
 
     resultats = []

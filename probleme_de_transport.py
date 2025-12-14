@@ -89,7 +89,11 @@ class ProblemeDeTransport:
 
         # 1. Données Initiales
         print("\n--- 1. Données (Coûts | Provisions) ---")
-        header = "      " + "".join([f" C{j + 1:<4}" for j in range(self.m)]) + " | PROV"
+
+        # CORRECTION : Largeur fixe de 8 caractères pour les headers
+        # " {f'C{j+1}':<7}" -> Espace + 7 chars = 8 chars
+        # FIX : Suppression de l'espace en trop avant "| PROV" pour alignement parfait
+        header = "      " + "".join([f" {f'C{j + 1}':<7}" for j in range(self.m)]) + "| PROV"
         print(header)
         print("-" * len(header))
 
@@ -97,14 +101,16 @@ class ProblemeDeTransport:
             row = f" P{i + 1:<3} |"
             for j in range(self.m):
                 val = self.couts[i][j]
-                row += f" {val:<4} "
+                # CORRECTION : Largeur fixe de 8 caractères pour les données
+                # " {val:<6} " -> Espace + 6 chars + Espace = 8 chars
+                row += f" {val:<6} "
             row += f"| {self.provisions[i]}"
             print(row)
 
         print("-" * len(header))
         cmd_row = " CMD  |"
         for c in self.commandes:
-            cmd_row += f" {c:<4} "
+            cmd_row += f" {c:<6} "
         print(cmd_row)
 
         # 2. Proposition de Transport
@@ -130,7 +136,8 @@ class ProblemeDeTransport:
 
     def _afficher_matrice(self, matrice):
         """Helper pour afficher une matrice n x m proprement"""
-        header = "      " + "".join([f" C{j + 1:<6}" for j in range(self.m)])
+        # CORRECTION : Largeur fixe de 8 caractères pour les headers
+        header = "      " + "".join([f" {f'C{j + 1}':<7}" for j in range(self.m)])
         print(header)
         print("-" * len(header))
         for i in range(self.n):
@@ -146,6 +153,8 @@ class ProblemeDeTransport:
                 else:
                     # Arrondi pour l'affichage
                     txt = f" {val:<6.4g}" if isinstance(val, float) else f" {val:<6}"
+
+                # CORRECTION : Force le texte à 8 caractères exactement
                 row_str += f"{txt:<8}"
             print(row_str)
 
@@ -162,6 +171,29 @@ class ProblemeDeTransport:
                 if val >= 1:  # Si c'est un vrai transport
                     total += val * self.couts[i][j]
         return total
+
+    def test_degenerescence(self, verbose=True):
+        """
+        Vérifie si la solution de base est dégénérée.
+        Condition : Nombre de variables de base < N + M - 1
+        """
+        nb_bases = 0
+        for i in range(self.n):
+            for j in range(self.m):
+                if self._is_basic(i, j):
+                    nb_bases += 1
+
+        cible = self.n + self.m - 1
+        est_degeneree = nb_bases < cible
+
+        if verbose:
+            print(f"   [Test Dégénérescence] Variables de base : {nb_bases} / {cible} attendues.")
+            if est_degeneree:
+                print("   /!\\ SOLUTION DÉGÉNÉRÉE DÉTECTÉE /!\\")
+            else:
+                print("   -> Solution non dégénérée.")
+
+        return est_degeneree
 
     # --- ALGORITHMES INITIAUX ---
 
@@ -328,6 +360,111 @@ class ProblemeDeTransport:
         is_connected = len(visited) == (self.n + self.m)
         return is_connected, visited
 
+    def est_acyclique(self, verbose=True):
+        """
+        Vérifie si la proposition de transport actuelle contient un cycle via un parcours en largeur (BFS).
+        Si un cycle est détecté, il est affiché (si verbose=True) et la fonction retourne False.
+        """
+        # Construction du graphe des bases
+        adj = {node: [] for node in range(self.n + self.m)}
+        for i in range(self.n):
+            for j in range(self.m):
+                if self._is_basic(i, j):
+                    u, v = i, self.n + j
+                    adj[u].append(v)
+                    adj[v].append(u)
+
+        visited = set()
+        parent = {}
+
+        # Parcours de toutes les composantes (au cas où le graphe serait non connexe)
+        for start_node in range(self.n + self.m):
+            if start_node not in visited:
+                queue = [start_node]
+                visited.add(start_node)
+                parent[start_node] = -1
+
+                while queue:
+                    u = queue.pop(0)
+                    for v in adj[u]:
+                        if v == parent[u]:
+                            continue  # C'est le nœud d'où l'on vient
+
+                        if v in visited:
+                            # Cycle détecté (Lien arrière u -- v)
+                            if verbose:
+                                self._afficher_cycle_detecte(u, v, parent)
+                            return False
+
+                        visited.add(v)
+                        parent[v] = u
+                        queue.append(v)
+
+        return True
+
+    def _afficher_cycle_detecte(self, u, v, parent):
+        """Affiche clairement le cycle trouvé entre u et v via les parents."""
+        # Reconstruction des chemins depuis la racine (ou ancêtre commun)
+        path_u = []
+        curr = u
+        while curr != -1:
+            path_u.append(curr)
+            curr = parent.get(curr, -1)
+
+        path_v = []
+        curr = v
+        while curr != -1:
+            path_v.append(curr)
+            curr = parent.get(curr, -1)
+
+        # Trouver l'ancêtre commun (LCA)
+        lca = -1
+        set_path_v = set(path_v)
+        for node in path_u:
+            if node in set_path_v:
+                lca = node
+                break
+
+        if lca == -1:
+            print(f"[Attention] Cycle détecté mais reconstruction échouée (u={u}, v={v})")
+            return
+
+        # Construction du cycle : u -> ... -> LCA -> ... -> v -> u
+        cycle_nodes = []
+
+        # Partie u -> LCA
+        idx = 0
+        while idx < len(path_u) and path_u[idx] != lca:
+            cycle_nodes.append(path_u[idx])
+            idx += 1
+        cycle_nodes.append(lca)
+
+        # Partie LCA <- v
+        segment_v = []
+        idx = 0
+        while idx < len(path_v) and path_v[idx] != lca:
+            segment_v.append(path_v[idx])
+            idx += 1
+
+        # On ajoute le segment v inversé (donc LCA -> v)
+        cycle_nodes.extend(reversed(segment_v))
+
+        # Formatage pour affichage (P1, C2...)
+        noms = []
+        for node in cycle_nodes:
+            if node < self.n:
+                noms.append(f"P{node + 1}")
+            else:
+                noms.append(f"C{node - self.n + 1}")
+
+        # Fermeture visuelle
+        noms.append(noms[0])
+
+        print("\n" + "!" * 50)
+        print(f"[ALERTE] Cycle détecté dans la proposition !")
+        print(f"   Chemin : {' -> '.join(noms)}")
+        print("!" * 50 + "\n")
+
     def rendre_connexe(self, verbose=True):
         """
         Modifie la proposition pour la rendre connexe.
@@ -484,7 +621,20 @@ class ProblemeDeTransport:
 
         if min_val == float('inf'): min_val = 0
 
-        if verbose: print(f" -> Quantité déplacée theta = {min_val:.4g}")
+        # --- Affichage Détaillé des Conditions (Demande PDF) ---
+        if verbose:
+            print(f" -> Quantité déplacée theta = {min_val:.4g}")
+            print("    Détails du transfert :")
+            for k, (r, c) in enumerate(cycle):
+                old_val = self.proposition[r][c]
+                if old_val == EPSILON:
+                    val_str = "eps"
+                else:
+                    val_str = f"{old_val:.4g}"
+
+                op = "+" if k % 2 == 0 else "-"
+                print(f"    - Case P{r + 1}-C{c + 1} ({val_str}) : {op} {min_val:.4g}")
+        # -------------------------------------------------------
 
         # Mise à jour
         variable_sortante_trouvee = False
@@ -514,6 +664,9 @@ class ProblemeDeTransport:
         while iteration < max_iter:
             iteration += 1
             if verbose: print(f"\n################ ITÉRATION {iteration} ################")
+
+            # TEST EXPLICITE DE DÉGÉNÉRESCENCE (Demande PDF)
+            self.test_degenerescence(verbose=verbose)
 
             # 1. Vérification / Correction Connexité
             if not self.est_connexe()[0]:
