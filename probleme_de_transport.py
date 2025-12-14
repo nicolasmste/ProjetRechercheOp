@@ -1,16 +1,16 @@
-import copy
 import sys
-import os
+import copy
 
-# Constante pour gérer la dégénérescence (valeur très petite considérée comme 0 mais basique)
+# Constante pour gérer la dégénérescence et les comparaisons flottantes
 EPSILON = 1e-9
 
 
 class ProblemeDeTransport:
     """
-    Classe représentant un problème de transport.
-    Elle contient les données du problème (coûts, provisions, commandes)
-    et les méthodes pour trouver une solution initiale et l'optimiser.
+    Classe représentant un problème de transport optimisée.
+    Complexité améliorée :
+    - Balas-Hammer : O(N^2 log N) via pré-tri
+    - Opérations Graphe (Potentiels, Cycles) : O(N) via liste d'adjacence
     """
 
     def __init__(self):
@@ -19,24 +19,24 @@ class ProblemeDeTransport:
         self.couts = []
         self.provisions = []
         self.commandes = []
+
+        # Matrice des quantités transportées (valeurs réelles)
         self.proposition = []
+
+        # OPTIMISATION CRITIQUE :
+        # Ensemble des coordonnées (i, j) des variables de base.
+        # Évite de parcourir toute la matrice pour construire le graphe.
+        self.bases = set()
 
         # Potentiels
         self.potentiels_u = []
         self.potentiels_v = []
 
-        # Matrice des coûts marginaux (pour affichage)
+        # Matrice des coûts marginaux
         self.marginaux = []
 
     def lire_fichier(self, chemin_fichier):
-        """
-        Lit les données du problème à partir d'un fichier .txt.
-        Format attendu (PDF):
-        n
-        m
-        [Matrice n lignes : couts... provision]
-        [Ligne commandes]
-        """
+        """Lit les données du problème à partir d'un fichier .txt."""
         try:
             with open(chemin_fichier, 'r', encoding='utf-8') as f:
                 content = f.read()
@@ -54,6 +54,7 @@ class ProblemeDeTransport:
                     self.couts = []
                     self.provisions = []
                     self.proposition = [[0.0 for _ in range(self.m)] for _ in range(self.n)]
+                    self.bases = set()  # Reset bases
 
                     # Lecture Matrice (Coûts + Prov)
                     for i in range(self.n):
@@ -78,8 +79,27 @@ class ProblemeDeTransport:
         except Exception as e:
             print(f"Erreur lecture fichier : {e}")
 
+    # --- GESTION DES VARIABLES DE BASE (OPTIMISATION) ---
+
+    def _ajouter_base(self, i, j, val):
+        """Définit une variable comme basique et met à jour la structure."""
+        self.proposition[i][j] = float(val)
+        self.bases.add((i, j))
+
+    def _retirer_base(self, i, j):
+        """Retire une variable de la base (la met à 0)."""
+        self.proposition[i][j] = 0.0
+        if (i, j) in self.bases:
+            self.bases.remove((i, j))
+
+    def _is_basic(self, i, j):
+        """Vérifie si une case est dans la base via le set (O(1))."""
+        return (i, j) in self.bases
+
+    # --- AFFICHAGE ---
+
     def affichage(self):
-        """Affiche les tableaux de manière formatée et soignée"""
+        """Affiche les tableaux de manière formatée."""
         if not self.couts:
             return
 
@@ -89,10 +109,6 @@ class ProblemeDeTransport:
 
         # 1. Données Initiales
         print("\n--- 1. Données (Coûts | Provisions) ---")
-
-        # CORRECTION : Largeur fixe de 8 caractères pour les headers
-        # " {f'C{j+1}':<7}" -> Espace + 7 chars = 8 chars
-        # FIX : Suppression de l'espace en trop avant "| PROV" pour alignement parfait
         header = "      " + "".join([f" {f'C{j + 1}':<7}" for j in range(self.m)]) + "| PROV"
         print(header)
         print("-" * len(header))
@@ -100,10 +116,7 @@ class ProblemeDeTransport:
         for i in range(self.n):
             row = f" P{i + 1:<3} |"
             for j in range(self.m):
-                val = self.couts[i][j]
-                # CORRECTION : Largeur fixe de 8 caractères pour les données
-                # " {val:<6} " -> Espace + 6 chars + Espace = 8 chars
-                row += f" {val:<6} "
+                row += f" {self.couts[i][j]:<6} "
             row += f"| {self.provisions[i]}"
             print(row)
 
@@ -115,13 +128,12 @@ class ProblemeDeTransport:
 
         # 2. Proposition de Transport
         print("\n--- 2. Proposition de Transport (Actuelle) ---")
-        self._afficher_matrice(self.proposition)
+        self._afficher_matrice(self.proposition, show_basis=True)
         print(f">>> Coût Total : {self.calcul_cout_total():.2f}")
 
         # 3. Potentiels
         if self.potentiels_u and self.potentiels_v:
             print("\n--- 3. Potentiels (Ui / Vj) ---")
-            # Filtrer les None pour l'affichage
             u_str = "Ui : " + ", ".join(
                 [f"P{i + 1}={val}" for i, val in enumerate(self.potentiels_u) if val is not None])
             v_str = "Vj : " + ", ".join(
@@ -132,11 +144,9 @@ class ProblemeDeTransport:
         # 4. Coûts Marginaux
         if self.marginaux:
             print("\n--- 4. Table des Coûts Marginaux (Delta) ---")
-            self._afficher_matrice(self.marginaux)
+            self._afficher_matrice(self.marginaux, show_basis=False)
 
-    def _afficher_matrice(self, matrice):
-        """Helper pour afficher une matrice n x m proprement"""
-        # CORRECTION : Largeur fixe de 8 caractères pour les headers
+    def _afficher_matrice(self, matrice, show_basis=False):
         header = "      " + "".join([f" {f'C{j + 1}':<7}" for j in range(self.m)])
         print(header)
         print("-" * len(header))
@@ -144,45 +154,38 @@ class ProblemeDeTransport:
             row_str = f" P{i + 1:<3} |"
             for j in range(self.m):
                 val = matrice[i][j]
-                if val is None:
-                    txt = " . "
-                elif val == 0 and not self._is_basic(i, j):
-                    txt = " . "  # Case vide non basique
-                elif val == EPSILON:
-                    txt = " eps  "  # Affichage explicite epsilon
-                else:
-                    # Arrondi pour l'affichage
-                    txt = f" {val:<6.4g}" if isinstance(val, float) else f" {val:<6}"
 
-                # CORRECTION : Force le texte à 8 caractères exactement
+                # Logique d'affichage spécifique
+                if show_basis:
+                    # Pour la proposition, on veut voir si c'est une base (même si 0 ou epsilon)
+                    if (i, j) in self.bases:
+                        if val == EPSILON or (val == 0 and (i, j) in self.bases):
+                            txt = " eps  "
+                        else:
+                            txt = f" {val:<6.4g}"
+                    else:
+                        txt = " . "
+                else:
+                    # Pour les marginaux
+                    if val is None:
+                        txt = " . "
+                    else:
+                        txt = f" {val:<6.4g}"
+
                 row_str += f"{txt:<8}"
             print(row_str)
 
-    def _is_basic(self, i, j):
-        """Une case est basique si > 0 ou si c'est un epsilon ajouté"""
-        return self.proposition[i][j] >= EPSILON
-
     def calcul_cout_total(self):
         total = 0
-        for i in range(self.n):
-            for j in range(self.m):
-                # On ignore EPSILON pour le coût réel
-                val = self.proposition[i][j]
-                if val >= 1:  # Si c'est un vrai transport
-                    total += val * self.couts[i][j]
+        for (i, j) in self.bases:
+            val = self.proposition[i][j]
+            if val > EPSILON:  # On ignore epsilon pour le coût
+                total += val * self.couts[i][j]
         return total
 
     def test_degenerescence(self, verbose=True):
-        """
-        Vérifie si la solution de base est dégénérée.
-        Condition : Nombre de variables de base < N + M - 1
-        """
-        nb_bases = 0
-        for i in range(self.n):
-            for j in range(self.m):
-                if self._is_basic(i, j):
-                    nb_bases += 1
-
+        """Vérifie si nb_bases < N + M - 1."""
+        nb_bases = len(self.bases)
         cible = self.n + self.m - 1
         est_degeneree = nb_bases < cible
 
@@ -190,355 +193,278 @@ class ProblemeDeTransport:
             print(f"   [Test Dégénérescence] Variables de base : {nb_bases} / {cible} attendues.")
             if est_degeneree:
                 print("   /!\\ SOLUTION DÉGÉNÉRÉE DÉTECTÉE /!\\")
-            else:
-                print("   -> Solution non dégénérée.")
-
         return est_degeneree
 
     # --- ALGORITHMES INITIAUX ---
 
     def nord_ouest(self, verbose=True):
         if verbose: print("\n[Algorithme] Nord-Ouest")
+        # Reset
+        self.proposition = [[0.0] * self.m for _ in range(self.n)]
+        self.bases = set()
+
         prov = list(self.provisions)
         cmd = list(self.commandes)
-        self.proposition = [[0.0] * self.m for _ in range(self.n)]
 
         i, j = 0, 0
         while i < self.n and j < self.m:
             q = min(prov[i], cmd[j])
-            self.proposition[i][j] = float(q)
+
+            # Ajout à la base
+            self._ajouter_base(i, j, q)
+
             prov[i] -= q
             cmd[j] -= q
 
             if prov[i] == 0 and cmd[j] == 0:
-                # Cas dégénéré simultané : on avance en diagonale
+                # Dégénérescence simultanée : on avance en diagonale
                 i += 1
                 j += 1
+                if i < self.n and j < self.m:
+                    # On ajoute artificiellement une base à 0 (epsilon)
+                    self._ajouter_base(i, j - 1, EPSILON)
             elif prov[i] == 0:
                 i += 1
             else:
                 j += 1
 
-    def balas_hammer(self, verbose=True):
-        if verbose: print("\n[Algorithme] Balas-Hammer (VAM) - Strict")
+        # Sécurité pour atteindre N+M-1 bases si besoin
+        while len(self.bases) < self.n + self.m - 1:
+            if verbose: print("   [Info] Ajout base artificielle post-Nord-Ouest")
+            self.rendre_connexe(verbose=False)
 
-        # Copies pour ne pas modifier les originaux
+    def balas_hammer(self, verbose=True):
+        """
+        Version optimisée de Balas-Hammer.
+        Trie les coûts une seule fois au début (O(N^2 log N)).
+        """
+        if verbose: print("\n[Algorithme] Balas-Hammer (VAM) - Optimisé")
+
+        self.proposition = [[0.0] * self.m for _ in range(self.n)]
+        self.bases = set()
+
         prov = list(self.provisions)
         cmd = list(self.commandes)
 
-        # Initialisation de la matrice résultat
-        self.proposition = [[0.0] * self.m for _ in range(self.n)]
+        # 1. Pré-traitement : Tri des lignes et colonnes
+        sorted_rows = []
+        for i in range(self.n):
+            ligne = [(self.couts[i][j], j) for j in range(self.m)]
+            ligne.sort(key=lambda x: x[0])
+            sorted_rows.append(ligne)
 
-        # Ensembles des indices actifs
+        sorted_cols = []
+        for j in range(self.m):
+            colonne = [(self.couts[i][j], i) for i in range(self.n)]
+            colonne.sort(key=lambda x: x[0])
+            sorted_cols.append(colonne)
+
         lignes_restantes = set(range(self.n))
         cols_restantes = set(range(self.m))
 
         while lignes_restantes and cols_restantes:
             candidats = []
 
-            # ---------------------------------------------------------
-            # 1. ANALYSE DES LIGNES
-            # ---------------------------------------------------------
+            # --- Analyse Lignes ---
             for i in lignes_restantes:
-                # Récupérer les coûts (valeur, index_colonne) pour cette ligne
-                couts_ligne = sorted([(self.couts[i][j], j) for j in cols_restantes], key=lambda x: x[0])
+                min1, min2 = None, None
+                valid_costs = []
+                for cost, j in sorted_rows[i]:
+                    if j in cols_restantes:
+                        valid_costs.append((cost, j))
+                        if len(valid_costs) == 2: break
 
-                # Calcul de la pénalité (Delta)
-                if len(couts_ligne) >= 2:
-                    pen = couts_ligne[1][0] - couts_ligne[0][0]
-                elif len(couts_ligne) == 1:
-                    pen = couts_ligne[0][0]
+                if len(valid_costs) >= 2:
+                    pen = valid_costs[1][0] - valid_costs[0][0]
+                    meilleur = valid_costs[0]
+                elif len(valid_costs) == 1:
+                    pen = valid_costs[0][0]
+                    meilleur = valid_costs[0]
                 else:
                     continue
 
-                meilleur_cout = couts_ligne[0][0]
-                idx_meilleure_col = couts_ligne[0][1]
+                capa = min(prov[i], cmd[meilleur[1]])
+                # Tuple: (Penalité, Capacité, -Coût, r, c, type)
+                candidats.append((pen, capa, -meilleur[0], i, meilleur[1], 'ligne'))
 
-                # Règle 2 : Capacité réelle de la case
-                capa_case = min(prov[i], cmd[idx_meilleure_col])
-
-                # (Pénalité, Capacité, -Coût, -IndexLigne, Type, IndexLigne, ListeCouts)
-                candidats.append((pen, capa_case, -meilleur_cout, -i, 'ligne', i, couts_ligne))
-
-            # ---------------------------------------------------------
-            # 2. ANALYSE DES COLONNES
-            # ---------------------------------------------------------
+            # --- Analyse Colonnes ---
             for j in cols_restantes:
-                # Récupérer les coûts (valeur, index_ligne) pour cette colonne
-                couts_col = sorted([(self.couts[i][j], i) for i in lignes_restantes], key=lambda x: x[0])
+                min1, min2 = None, None
+                valid_costs = []
+                for cost, i in sorted_cols[j]:
+                    if i in lignes_restantes:
+                        valid_costs.append((cost, i))
+                        if len(valid_costs) == 2: break
 
-                if len(couts_col) >= 2:
-                    pen = couts_col[1][0] - couts_col[0][0]
-                elif len(couts_col) == 1:
-                    pen = couts_col[0][0]
+                if len(valid_costs) >= 2:
+                    pen = valid_costs[1][0] - valid_costs[0][0]
+                    meilleur = valid_costs[0]
+                elif len(valid_costs) == 1:
+                    pen = valid_costs[0][0]
+                    meilleur = valid_costs[0]
                 else:
                     continue
 
-                meilleur_cout = couts_col[0][0]
-                idx_meilleure_ligne = couts_col[0][1]
+                capa = min(prov[meilleur[1]], cmd[j])
+                candidats.append((pen, capa, -meilleur[0], meilleur[1], j, 'col'))
 
-                capa_case = min(prov[idx_meilleure_ligne], cmd[j])
-
-                # (Pénalité, Capacité, -Coût, -IndexCol, Type, IndexCol, ListeCouts)
-                candidats.append((pen, capa_case, -meilleur_cout, -j, 'colonne', j, couts_col))
-
-            # ---------------------------------------------------------
-            # 3. CHOIX (Pénalité Max -> Capacité Max -> Coût Min -> Arbitraire G/H)
-            # ---------------------------------------------------------
-            if not candidats:
-                break
+            if not candidats: break
 
             gagnant = max(candidats)
-            pen_max, cap_max, neg_cout, _, type_choix, index_choisi, couts_tries = gagnant
+            pen, cap, neg_cost, r, c, type_choix = gagnant
 
-            # ---------------------------------------------------------
-            # 4. AFFECTATION
-            # ---------------------------------------------------------
-            if type_choix == 'ligne':
-                r = index_choisi
-                c = couts_tries[0][1]
-            else:
-                c = index_choisi
-                r = couts_tries[0][1]
-
-                # Quantité maximale permise
             q = min(prov[r], cmd[c])
 
-            # Affichage demandé par le PDF (si verbose)
+            # --- AFFICHAGE FORMATÉ DEMANDÉ ---
             if verbose:
-                # On reconvertit le coût négatif en positif pour l'affichage
-                print(
-                    f"   -> Max Pénalité: {pen_max} (sur {type_choix} {index_choisi}) | Choix arête: ({r}, {c}) | Quantité: {q}")
+                loc_txt = ""
+                if type_choix == 'col':
+                    loc_txt = f"colonne {c}"
+                else:
+                    loc_txt = f"ligne {r}"
+                print(f"   -> Max Pénalité: {pen} (sur {loc_txt}) | Choix arête: ({r}, {c}) | Quantité: {q}")
 
-            self.proposition[r][c] = float(q)
-
-            # Mise à jour des stocks/demandes
+            # Affectation
+            self._ajouter_base(r, c, q)
             prov[r] -= q
             cmd[c] -= q
 
-            # Nettoyage
-            if prov[r] == 0:
+            # Mise à jour des ensembles restants
+            if prov[r] == 0 and cmd[c] == 0:
+                if len(lignes_restantes) > 1:
+                    lignes_restantes.discard(r)
+                else:
+                    cols_restantes.discard(c)
+            elif prov[r] == 0:
                 lignes_restantes.discard(r)
-            if cmd[c] == 0:
+            elif cmd[c] == 0:
                 cols_restantes.discard(c)
 
-    # --- MÉTHODE DU MARCHE-PIED & GRAPHES ---
+        # Finition : Bases artificielles si besoin
+        while len(self.bases) < self.n + self.m - 1:
+            self.rendre_connexe(verbose=False)
+
+    # --- MÉTHODES OPTIMISÉES GRAPHES & MARCHE-PIED ---
+
+    def _build_adj_list(self):
+        adj = {node: [] for node in range(self.n + self.m)}
+        for (i, j) in self.bases:
+            u = i
+            v = self.n + j
+            adj[u].append(v)
+            adj[v].append(u)
+        return adj
 
     def est_connexe(self):
-        """
-        Vérifie la connexité du graphe des bases (bipartite).
-        Retourne (bool, set_visited_nodes)
-        Les noeuds sont indexés : 0..n-1 (Provs), n..n+m-1 (Commandes)
-        """
-        adj = {k: [] for k in range(self.n + self.m)}
-        bases_count = 0
-
-        # Construction du graphe uniquement sur les variables de base
-        for i in range(self.n):
-            for j in range(self.m):
-                if self._is_basic(i, j):
-                    u, v = i, self.n + j
-                    adj[u].append(v)
-                    adj[v].append(u)
-                    bases_count += 1
-
-        if bases_count == 0:
+        if not self.bases:
             return False, set()
 
-        # BFS
+        adj = self._build_adj_list()
+        start_node = list(adj.keys())[0]
+
+        visited = set()
+        queue = [start_node]
+        visited.add(start_node)
+
+        while queue:
+            u = queue.pop(0)
+            for v in adj[u]:
+                if v not in visited:
+                    visited.add(v)
+                    queue.append(v)
+
+        is_conn = len(visited) == (self.n + self.m)
+        return is_conn, visited
+
+    def rendre_connexe(self, verbose=True):
+        """Ajoute des arêtes artificielles (Epsilon) pour connecter le graphe."""
+        is_conn, visited = self.est_connexe()
+
+        # --- AFFICHAGE FORMATÉ DEMANDÉ (SOUS-GRAPHES) ---
+        if not is_conn and verbose:
+            unvisited = sorted(list(set(range(self.n + self.m)) - visited))
+            visited_list = sorted(list(visited))
+            print(f"   [Détail Connexité] Sous-graphe 1 (Visités): {set(visited_list)}")
+            print(f"   [Détail Connexité] Sous-graphe 2 (Isolés): {set(unvisited)}")
+            print("[Info] Graphe non connexe -> Correction dégénérescence...")
+
+        loop_guard = 0
+        while not is_conn and loop_guard < (self.n * self.m):
+            loop_guard += 1
+            unvisited = set(range(self.n + self.m)) - visited
+
+            best_link = None
+            min_cost = float('inf')
+
+            for u in visited:
+                if u < self.n:  # Ligne
+                    r = u
+                    for v in unvisited:
+                        if v >= self.n:
+                            c = v - self.n
+                            if self.couts[r][c] < min_cost:
+                                min_cost = self.couts[r][c]
+                                best_link = (r, c)
+                else:  # Colonne
+                    c = u - self.n
+                    for v in unvisited:
+                        if v < self.n:
+                            r = v
+                            if self.couts[r][c] < min_cost:
+                                min_cost = self.couts[r][c]
+                                best_link = (r, c)
+
+            if best_link:
+                r, c = best_link
+                if verbose:
+                    print(f" -> Ajout lien artificiel (epsilon) en [{r}, {c}]")
+                self._ajouter_base(r, c, EPSILON)
+                is_conn, visited = self.est_connexe()
+
+                # Répéter l'affichage si encore déconnecté ?
+                # Le format demandé semble impliquer un log par ajout
+                if not is_conn and verbose:
+                    print("[Info] Graphe non connexe -> Correction dégénérescence...")
+            else:
+                break
+
+    def calcul_potentiels(self):
+        adj = self._build_adj_list()
+        self.potentiels_u = [None] * self.n
+        self.potentiels_v = [None] * self.m
+
         start_node = 0
+        self.potentiels_u[0] = 0
+
         queue = [start_node]
         visited = {start_node}
 
         while queue:
             curr = queue.pop(0)
-            for neigh in adj[curr]:
-                if neigh not in visited:
-                    visited.add(neigh)
-                    queue.append(neigh)
+            is_row = (curr < self.n)
+            idx_curr = curr if is_row else (curr - self.n)
+            val_curr = self.potentiels_u[idx_curr] if is_row else self.potentiels_v[idx_curr]
 
-        is_connected = len(visited) == (self.n + self.m)
-        return is_connected, visited
+            if val_curr is None: continue
 
-    def est_acyclique(self, verbose=True):
-        """
-        Vérifie si la proposition de transport actuelle contient un cycle via un parcours en largeur (BFS).
-        Si un cycle est détecté, il est affiché (si verbose=True) et la fonction retourne False.
-        """
-        # Construction du graphe des bases
-        adj = {node: [] for node in range(self.n + self.m)}
-        for i in range(self.n):
-            for j in range(self.m):
-                if self._is_basic(i, j):
-                    u, v = i, self.n + j
-                    adj[u].append(v)
-                    adj[v].append(u)
+            for neighbor in adj[curr]:
+                if neighbor in visited: continue
 
-        visited = set()
-        parent = {}
+                visited.add(neighbor)
+                queue.append(neighbor)
 
-        # Parcours de toutes les composantes (au cas où le graphe serait non connexe)
-        for start_node in range(self.n + self.m):
-            if start_node not in visited:
-                queue = [start_node]
-                visited.add(start_node)
-                parent[start_node] = -1
-
-                while queue:
-                    u = queue.pop(0)
-                    for v in adj[u]:
-                        if v == parent[u]:
-                            continue  # C'est le nœud d'où l'on vient
-
-                        if v in visited:
-                            # Cycle détecté (Lien arrière u -- v)
-                            if verbose:
-                                self._afficher_cycle_detecte(u, v, parent)
-                            return False
-
-                        visited.add(v)
-                        parent[v] = u
-                        queue.append(v)
-
-        return True
-
-    def _afficher_cycle_detecte(self, u, v, parent):
-        """Affiche clairement le cycle trouvé entre u et v via les parents."""
-        # Reconstruction des chemins depuis la racine (ou ancêtre commun)
-        path_u = []
-        curr = u
-        while curr != -1:
-            path_u.append(curr)
-            curr = parent.get(curr, -1)
-
-        path_v = []
-        curr = v
-        while curr != -1:
-            path_v.append(curr)
-            curr = parent.get(curr, -1)
-
-        # Trouver l'ancêtre commun (LCA)
-        lca = -1
-        set_path_v = set(path_v)
-        for node in path_u:
-            if node in set_path_v:
-                lca = node
-                break
-
-        if lca == -1:
-            print(f"[Attention] Cycle détecté mais reconstruction échouée (u={u}, v={v})")
-            return
-
-        # Construction du cycle : u -> ... -> LCA -> ... -> v -> u
-        cycle_nodes = []
-
-        # Partie u -> LCA
-        idx = 0
-        while idx < len(path_u) and path_u[idx] != lca:
-            cycle_nodes.append(path_u[idx])
-            idx += 1
-        cycle_nodes.append(lca)
-
-        # Partie LCA <- v
-        segment_v = []
-        idx = 0
-        while idx < len(path_v) and path_v[idx] != lca:
-            segment_v.append(path_v[idx])
-            idx += 1
-
-        # On ajoute le segment v inversé (donc LCA -> v)
-        cycle_nodes.extend(reversed(segment_v))
-
-        # Formatage pour affichage (P1, C2...)
-        noms = []
-        for node in cycle_nodes:
-            if node < self.n:
-                noms.append(f"P{node + 1}")
-            else:
-                noms.append(f"C{node - self.n + 1}")
-
-        # Fermeture visuelle
-        noms.append(noms[0])
-
-        print("\n" + "!" * 50)
-        print(f"[ALERTE] Cycle détecté dans la proposition !")
-        print(f"   Chemin : {' -> '.join(noms)}")
-        print("!" * 50 + "\n")
-
-    def rendre_connexe(self, verbose=True):
-        """
-        Modifie la proposition pour la rendre connexe.
-        Si le graphe est déconnecté, on ajoute des arêtes artificielles (Epsilon).
-        """
-        is_conn, visited = self.est_connexe()
-
-        # Affichage détaillé des sous-graphes si déconnecté (Demande PDF)
-        if not is_conn and verbose:
-            unvisited = set(range(self.n + self.m)) - visited
-            print(f"   [Détail Connexité] Sous-graphe 1 (Visités): {visited}")
-            print(f"   [Détail Connexité] Sous-graphe 2 (Isolés): {unvisited}")
-
-        while not is_conn:
-            if verbose: print("[Info] Graphe non connexe -> Correction dégénérescence...")
-
-            min_cost = float('inf')
-            best_cell = None
-
-            unvisited = set(range(self.n + self.m)) - visited
-
-            for u in visited:
-                if u < self.n:  # u est une ligne
-                    row = u
-                    for col_node in unvisited:
-                        if col_node >= self.n:
-                            col = col_node - self.n
-                            if self.couts[row][col] < min_cost:
-                                min_cost = self.couts[row][col]
-                                best_cell = (row, col)
-                else:  # u est une colonne
-                    col = u - self.n
-                    for row_node in unvisited:
-                        if row_node < self.n:
-                            row = row_node
-                            if self.couts[row][col] < min_cost:
-                                min_cost = self.couts[row][col]
-                                best_cell = (row, col)
-
-            if best_cell:
-                r, c = best_cell
-                if verbose: print(f" -> Ajout lien artificiel (epsilon) en [{r}, {c}]")
-                self.proposition[r][c] = EPSILON
-                # Mise à jour rapide des visités
-                is_conn, visited = self.est_connexe()
-            else:
-                if verbose: print("Erreur critique : Impossible de connecter le graphe.")
-                break
-
-    def calcul_potentiels(self):
-        """Calcul des potentiels Ui et Vj tels que Ui + Vj = Cij"""
-        self.potentiels_u = [None] * self.n
-        self.potentiels_v = [None] * self.m
-
-        self.potentiels_u[0] = 0
-
-        changed = True
-        while changed:
-            changed = False
-            for i in range(self.n):
-                for j in range(self.m):
-                    if self._is_basic(i, j):
-                        if self.potentiels_u[i] is not None and self.potentiels_v[j] is None:
-                            self.potentiels_v[j] = self.couts[i][j] - self.potentiels_u[i]
-                            changed = True
-                        elif self.potentiels_v[j] is not None and self.potentiels_u[i] is None:
-                            self.potentiels_u[i] = self.couts[i][j] - self.potentiels_v[j]
-                            changed = True
+                if is_row:
+                    j = neighbor - self.n
+                    cost = self.couts[idx_curr][j]
+                    self.potentiels_v[j] = cost - val_curr
+                else:
+                    i = neighbor
+                    cost = self.couts[i][idx_curr]
+                    self.potentiels_u[i] = cost - val_curr
 
     def calcul_couts_marginaux(self):
-        """Calcule Delta_ij = Cij - Ui - Vj pour les cases non basiques."""
         min_delta = 0
         cell_min = (-1, -1)
-
         self.marginaux = [[None] * self.m for _ in range(self.n)]
 
         for i in range(self.n):
@@ -552,21 +478,12 @@ class ProblemeDeTransport:
                             cell_min = (i, j)
                     else:
                         self.marginaux[i][j] = 0
-
         return min_delta, cell_min
 
     def get_cycle_path(self, start_cell):
-        """Trouve le cycle unique créé en ajoutant start_cell."""
         start_u = start_cell[0]
         start_v_node = self.n + start_cell[1]
-
-        adj = {node: [] for node in range(self.n + self.m)}
-        for i in range(self.n):
-            for j in range(self.m):
-                if self._is_basic(i, j):
-                    u, v = i, self.n + j
-                    adj[u].append(v)
-                    adj[v].append(u)
+        adj = self._build_adj_list()
 
         queue = [(start_u, [start_u])]
         visited = {start_u}
@@ -577,85 +494,80 @@ class ProblemeDeTransport:
             if curr == start_v_node:
                 path_found = path
                 break
+
             for neigh in adj[curr]:
                 if neigh not in visited:
                     visited.add(neigh)
                     queue.append((neigh, path + [neigh]))
 
-        if not path_found:
-            return None
+        if not path_found: return None
 
-        cycle_coords = []
-        cycle_coords.append(start_cell)
-
-        path_edges = []
-        for k in range(len(path_found) - 1):
-            n1 = path_found[k]
-            n2 = path_found[k + 1]
+        cycle_coords = [start_cell]
+        path_nodes = path_found
+        for k in range(len(path_nodes) - 1):
+            n1 = path_nodes[k]
+            n2 = path_nodes[k + 1]
             if n1 < self.n:
                 r, c = n1, n2 - self.n
             else:
                 r, c = n2, n1 - self.n
-            path_edges.append((r, c))
+            cycle_coords.append((r, c))
 
-        return cycle_coords + path_edges[::-1]
+        return cycle_coords
 
     def maximiser_transport_sur_cycle(self, cell_entree, verbose=True):
         cycle = self.get_cycle_path(cell_entree)
         if not cycle: return
 
+        if verbose: print(f" -> Cycle trouvé (longueur {len(cycle)})")
+
         plus_cells = []
         minus_cells = []
-        min_val = float('inf')
-
-        if verbose: print(f" -> Cycle trouvé (longueur {len(cycle)})")
 
         for k, (r, c) in enumerate(cycle):
             if k % 2 == 0:
                 plus_cells.append((r, c))
             else:
                 minus_cells.append((r, c))
-                val = self.proposition[r][c]
-                if val < min_val:
-                    min_val = val
 
-        if min_val == float('inf'): min_val = 0
+        valeurs_minus = [self.proposition[r][c] for r, c in minus_cells]
+        theta = min(valeurs_minus) if valeurs_minus else 0
+        if theta < EPSILON: theta = 0
 
-        # --- Affichage Détaillé des Conditions (Demande PDF) ---
+        if verbose: print(f" -> Quantité déplacée theta = {theta}")
+
+        # --- AFFICHAGE FORMATÉ DEMANDÉ (DÉTAILS TRANSFERT) ---
         if verbose:
-            print(f" -> Quantité déplacée theta = {min_val:.4g}")
             print("    Détails du transfert :")
             for k, (r, c) in enumerate(cycle):
                 old_val = self.proposition[r][c]
-                if old_val == EPSILON:
-                    val_str = "eps"
-                else:
-                    val_str = f"{old_val:.4g}"
+                # Formatage propre de la valeur (0 pour epsilon ou entier)
+                val_display = 0 if old_val < EPSILON else old_val
+                if abs(val_display - round(val_display)) < 1e-9:
+                    val_display = int(round(val_display))
 
                 op = "+" if k % 2 == 0 else "-"
-                print(f"    - Case P{r + 1}-C{c + 1} ({val_str}) : {op} {min_val:.4g}")
-        # -------------------------------------------------------
+                # Conversion index 0-based -> 1-based (P1, C1...)
+                print(f"    - Case P{r + 1}-C{c + 1} ({val_display}) : {op} {theta}")
 
         # Mise à jour
-        variable_sortante_trouvee = False
+        val_entree = self.proposition[cell_entree[0]][cell_entree[1]] + theta
+        self._ajouter_base(cell_entree[0], cell_entree[1], val_entree)
 
-        for r, c in plus_cells:
-            self.proposition[r][c] += min_val
+        for (r, c) in plus_cells[1:]:
+            self.proposition[r][c] += theta
 
-        for r, c in minus_cells:
-            self.proposition[r][c] -= min_val
+        variable_sortie_faite = False
+        for (r, c) in minus_cells:
+            self.proposition[r][c] -= theta
 
-            # Gestion sortie de base stricte (sécurité numérique)
-            if abs(self.proposition[r][c]) < 1e-12:
-                # Si c'est la première variable qui tombe à 0, elle sort vraiment de la base
-                if not variable_sortante_trouvee:
-                    self.proposition[r][c] = 0.0
-                    variable_sortante_trouvee = True
-                else:
-                    # Si une DEUXIÈME variable tombe à 0 en même temps (dégénérescence simultanée)
-                    # On la force à rester dans la base avec EPSILON pour ne pas briser la chaîne
-                    self.proposition[r][c] = EPSILON
-                    if verbose: print(f"   [Info] Maintien artificiel de ({r},{c}) avec Epsilon (Dégénérescence)")
+            if not variable_sortie_faite and self.proposition[r][c] <= EPSILON:
+                if self.proposition[r][c] <= EPSILON:
+                    self._retirer_base(r, c)
+                    variable_sortie_faite = True
+            elif self.proposition[r][c] < EPSILON:
+                self.proposition[r][c] = EPSILON
+                if verbose: print(f"   [Dégénérescence] ({r},{c}) maintenue à Epsilon")
 
     def marche_pied_resolution(self, verbose=True):
         iteration = 0
@@ -665,18 +577,32 @@ class ProblemeDeTransport:
             iteration += 1
             if verbose: print(f"\n################ ITÉRATION {iteration} ################")
 
-            # TEST EXPLICITE DE DÉGÉNÉRESCENCE (Demande PDF)
+            # 1. Connexité (Si jamais perdue, mais robuste normalement)
+            if len(self.bases) < self.n + self.m - 1:
+                # Si c'est juste un manque de bases (dégénérescence), on appelle rendre_connexe
+                # qui contient le test_degenerescence implicite pour l'affichage
+                pass
+
+                # Appel explicite pour l'affichage requis par le PDF
             self.test_degenerescence(verbose=verbose)
 
-            # 1. Vérification / Correction Connexité
+            # Correction effective
             if not self.est_connexe()[0]:
                 self.rendre_connexe(verbose=verbose)
+            elif len(self.bases) < self.n + self.m - 1:
+                # Cas où c'est connexe mais dégénéré (manque une arête quelque part qui ne connecte rien de nouveau ?)
+                # Rare en transport simple, mais on force l'ajout
+                if verbose: print("[Info] Graphe connexe mais dégénéré -> Ajout epsilon.")
+                self.rendre_connexe(verbose=verbose)
 
-            # 2. Calculs Potentiels & Marginaux
+            # 2. Potentiels
             self.calcul_potentiels()
+
+            # 3. Marginaux
             min_delta, cell_in = self.calcul_couts_marginaux()
 
-            if verbose: self.affichage()
+            if verbose:
+                self.affichage()
 
             if min_delta >= -1e-9:
                 if verbose: print("\n>>> CRITÈRE D'OPTIMALITÉ ATTEINT : Solution Optimale trouvée.")
@@ -684,11 +610,8 @@ class ProblemeDeTransport:
 
             if verbose: print(f"\n[Amélioration] Candidat entrée : {cell_in} avec gain marginal {min_delta}")
 
-            # 3. Modification sur cycle
+            # 4. Cycle & Update
             self.maximiser_transport_sur_cycle(cell_in, verbose=verbose)
-
-        if iteration == max_iter:
-            if verbose: print("\n[Attention] Nombre max d'itérations atteint.")
 
         if verbose:
             print("\n--- RÉSULTAT FINAL ---")

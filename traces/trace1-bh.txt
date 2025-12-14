@@ -1,0 +1,130 @@
+============================================================
+TRACE D'EXÉCUTION GÉNÉRÉE AUTOMATIQUEMENT
+Fichier cible : traces\trace1-bh.txt
+Algorithme Initial : Balas-Hammer
+============================================================
+
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2     | PROV
+----------------------------
+ P1   | 30      20     | 100
+ P2   | 10      50     | 100
+----------------------------
+ CMD  | 100     100    
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2     
+----------------------
+ P1   | .       .      
+ P2   | .       .      
+>>> Coût Total : 0.00
+
+[Algorithme] Balas-Hammer (VAM) - Strict
+   -> Max Pénalité: 40 (sur ligne 1) | Choix arête: (1, 0) | Quantité: 100
+   -> Max Pénalité: 20 (sur ligne 0) | Choix arête: (0, 1) | Quantité: 100
+
+[Temps Initialisation] 0.000128 secondes
+
+--- Proposition Initiale ---
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2     | PROV
+----------------------------
+ P1   | 30      20     | 100
+ P2   | 10      50     | 100
+----------------------------
+ CMD  | 100     100    
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2     
+----------------------
+ P1   | .       100    
+ P2   | 100     .      
+>>> Coût Total : 3000.00
+
+========================================
+ Lancement de l'optimisation (Marche-Pied)
+========================================
+
+################ ITÉRATION 1 ################
+   [Test Dégénérescence] Variables de base : 2 / 3 attendues.
+   /!\ SOLUTION DÉGÉNÉRÉE DÉTECTÉE /!\
+   [Détail Connexité] Sous-graphe 1 (Visités): {0, 3}
+   [Détail Connexité] Sous-graphe 2 (Isolés): {1, 2}
+[Info] Graphe non connexe -> Correction dégénérescence...
+ -> Ajout lien artificiel (epsilon) en [0, 0]
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2     | PROV
+----------------------------
+ P1   | 30      20     | 100
+ P2   | 10      50     | 100
+----------------------------
+ CMD  | 100     100    
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2     
+----------------------
+ P1   | eps     100    
+ P2   | 100     .      
+>>> Coût Total : 3000.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=-20
+Vj : C1=30, C2=20
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2     
+----------------------
+ P1   | .       .      
+ P2   | .       50     
+
+>>> CRITÈRE D'OPTIMALITÉ ATTEINT : Solution Optimale trouvée.
+
+--- RÉSULTAT FINAL ---
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2     | PROV
+----------------------------
+ P1   | 30      20     | 100
+ P2   | 10      50     | 100
+----------------------------
+ CMD  | 100     100    
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2     
+----------------------
+ P1   | eps     100    
+ P2   | 100     .      
+>>> Coût Total : 3000.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=-20
+Vj : C1=30, C2=20
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2     
+----------------------
+ P1   | .       .      
+ P2   | .       50     
+
+[Temps Optimisation] 0.000442 secondes
+
+--- FIN DE LA TRACE ---

@@ -14,7 +14,8 @@ try:
         generer_probleme_transport_obj,
         lancer_etude_complexite,
         resoudre_probleme_interactif,
-        generer_trace_execution
+        generer_trace_execution,
+        generer_graphiques_complexite  # <--- NOUVEL IMPORT
     )
 except ImportError:
     print("ERREUR CRITIQUE : Le fichier 'transport_utils.py' est introuvable.")
@@ -34,6 +35,7 @@ if __name__ == "__main__":
         print("2. Générer un problème aléatoire (Taille N x N)")
         print("3. Lancer l'étude de complexité (Benchmark)")
         print("4. Générer TOUTES les traces d'exécution (Automatique)")
+        print("5. Générer les graphiques de complexité (à partir des CSV)")
         print("Q. Quitter")
         print("-" * 60)
 
@@ -144,6 +146,10 @@ if __name__ == "__main__":
                 print(
                     f"\n[SUCCÈS] {count} problèmes traités. {count * 2} fichiers de trace générés dans le dossier '{dossier_traces}/'.")
 
+            input("Appuyez sur [Entrée] pour continuer...")
+
+        elif choix == '5':
+            generer_graphiques_complexite()
             input("Appuyez sur [Entrée] pour continuer...")
 
         else:

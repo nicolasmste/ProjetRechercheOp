@@ -1,0 +1,192 @@
+============================================================
+TRACE D'EXÉCUTION GÉNÉRÉE AUTOMATIQUEMENT
+Fichier cible : traces\trace10-bh.txt
+Algorithme Initial : Balas-Hammer
+============================================================
+
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4      C5      C6      C7     | PROV
+--------------------------------------------------------------------
+ P1   | 300     20      15      16      17      18      20     | 500
+ P2   | 1       50      24      30      22      27      19     | 500
+ P3   | 50      40      30      3       25      26      3      | 2500
+--------------------------------------------------------------------
+ CMD  | 500     500     500     500     500     500     500    
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4      C5      C6      C7     
+--------------------------------------------------------------
+ P1   | .       .       .       .       .       .       .      
+ P2   | .       .       .       .       .       .       .      
+ P3   | .       .       .       .       .       .       .      
+>>> Coût Total : 0.00
+
+[Algorithme] Balas-Hammer (VAM) - Strict
+   -> Max Pénalité: 49 (sur colonne 0) | Choix arête: (1, 0) | Quantité: 500
+   -> Max Pénalité: 20 (sur colonne 1) | Choix arête: (0, 1) | Quantité: 500
+   -> Max Pénalité: 30 (sur colonne 2) | Choix arête: (2, 2) | Quantité: 500
+   -> Max Pénalité: 26 (sur colonne 5) | Choix arête: (2, 5) | Quantité: 500
+   -> Max Pénalité: 25 (sur colonne 4) | Choix arête: (2, 4) | Quantité: 500
+   -> Max Pénalité: 3 (sur colonne 3) | Choix arête: (2, 3) | Quantité: 500
+   -> Max Pénalité: 3 (sur ligne 2) | Choix arête: (2, 6) | Quantité: 500
+
+[Temps Initialisation] 0.000619 secondes
+
+--- Proposition Initiale ---
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4      C5      C6      C7     | PROV
+--------------------------------------------------------------------
+ P1   | 300     20      15      16      17      18      20     | 500
+ P2   | 1       50      24      30      22      27      19     | 500
+ P3   | 50      40      30      3       25      26      3      | 2500
+--------------------------------------------------------------------
+ CMD  | 500     500     500     500     500     500     500    
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4      C5      C6      C7     
+--------------------------------------------------------------
+ P1   | .       500     .       .       .       .       .      
+ P2   | 500     .       .       .       .       .       .      
+ P3   | .       .       500     500     500     500     500    
+>>> Coût Total : 54000.00
+
+========================================
+ Lancement de l'optimisation (Marche-Pied)
+========================================
+
+################ ITÉRATION 1 ################
+   [Test Dégénérescence] Variables de base : 7 / 9 attendues.
+   /!\ SOLUTION DÉGÉNÉRÉE DÉTECTÉE /!\
+   [Détail Connexité] Sous-graphe 1 (Visités): {0, 4}
+   [Détail Connexité] Sous-graphe 2 (Isolés): {1, 2, 3, 5, 6, 7, 8, 9}
+[Info] Graphe non connexe -> Correction dégénérescence...
+ -> Ajout lien artificiel (epsilon) en [0, 2]
+[Info] Graphe non connexe -> Correction dégénérescence...
+ -> Ajout lien artificiel (epsilon) en [1, 6]
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4      C5      C6      C7     | PROV
+--------------------------------------------------------------------
+ P1   | 300     20      15      16      17      18      20     | 500
+ P2   | 1       50      24      30      22      27      19     | 500
+ P3   | 50      40      30      3       25      26      3      | 2500
+--------------------------------------------------------------------
+ CMD  | 500     500     500     500     500     500     500    
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4      C5      C6      C7     
+--------------------------------------------------------------
+ P1   | .       500     eps     .       .       .       .      
+ P2   | 500     .       .       .       .       .       eps    
+ P3   | .       .       500     500     500     500     500    
+>>> Coût Total : 54000.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=31, P3=15
+Vj : C1=-30, C2=20, C3=15, C4=-12, C5=10, C6=11, C7=-12
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2      C3      C4      C5      C6      C7     
+--------------------------------------------------------------
+ P1   | 330     .       .       28      7       7       32     
+ P2   | .       -1      -22     11      -19     -15     .      
+ P3   | 65      5       .       .       .       .       .      
+
+[Amélioration] Candidat entrée : (1, 2) avec gain marginal -22
+ -> Cycle trouvé (longueur 4)
+ -> Quantité déplacée theta = 1e-09
+    Détails du transfert :
+    - Case P2-C3 (0) : + 1e-09
+    - Case P3-C3 (500) : - 1e-09
+    - Case P3-C7 (500) : + 1e-09
+    - Case P2-C7 (eps) : - 1e-09
+
+################ ITÉRATION 2 ################
+   [Test Dégénérescence] Variables de base : 9 / 9 attendues.
+   -> Solution non dégénérée.
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4      C5      C6      C7     | PROV
+--------------------------------------------------------------------
+ P1   | 300     20      15      16      17      18      20     | 500
+ P2   | 1       50      24      30      22      27      19     | 500
+ P3   | 50      40      30      3       25      26      3      | 2500
+--------------------------------------------------------------------
+ CMD  | 500     500     500     500     500     500     500    
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4      C5      C6      C7     
+--------------------------------------------------------------
+ P1   | .       500     eps     .       .       .       .      
+ P2   | 500     .       eps     .       .       .       .      
+ P3   | .       .       500     500     500     500     500    
+>>> Coût Total : 54000.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=9, P3=15
+Vj : C1=-8, C2=20, C3=15, C4=-12, C5=10, C6=11, C7=-12
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2      C3      C4      C5      C6      C7     
+--------------------------------------------------------------
+ P1   | 308     .       .       28      7       7       32     
+ P2   | .       21      .       33      3       7       22     
+ P3   | 43      5       .       .       .       .       .      
+
+>>> CRITÈRE D'OPTIMALITÉ ATTEINT : Solution Optimale trouvée.
+
+--- RÉSULTAT FINAL ---
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4      C5      C6      C7     | PROV
+--------------------------------------------------------------------
+ P1   | 300     20      15      16      17      18      20     | 500
+ P2   | 1       50      24      30      22      27      19     | 500
+ P3   | 50      40      30      3       25      26      3      | 2500
+--------------------------------------------------------------------
+ CMD  | 500     500     500     500     500     500     500    
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4      C5      C6      C7     
+--------------------------------------------------------------
+ P1   | .       500     eps     .       .       .       .      
+ P2   | 500     .       eps     .       .       .       .      
+ P3   | .       .       500     500     500     500     500    
+>>> Coût Total : 54000.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=9, P3=15
+Vj : C1=-8, C2=20, C3=15, C4=-12, C5=10, C6=11, C7=-12
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2      C3      C4      C5      C6      C7     
+--------------------------------------------------------------
+ P1   | 308     .       .       28      7       7       32     
+ P2   | .       21      .       33      3       7       22     
+ P3   | 43      5       .       .       .       .       .      
+
+[Temps Optimisation] 0.001272 secondes
+
+--- FIN DE LA TRACE ---

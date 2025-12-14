@@ -1,0 +1,314 @@
+============================================================
+TRACE D'EXÉCUTION GÉNÉRÉE AUTOMATIQUEMENT
+Fichier cible : traces\trace6-no.txt
+Algorithme Initial : Nord-Ouest
+============================================================
+
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4     | PROV
+--------------------------------------------
+ P1   | 11      12      10      10     | 60
+ P2   | 17      16      15      18     | 30
+ P3   | 19      21      20      22     | 90
+--------------------------------------------
+ CMD  | 50      75      30      25     
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | .       .       .       .      
+ P2   | .       .       .       .      
+ P3   | .       .       .       .      
+>>> Coût Total : 0.00
+
+[Algorithme] Nord-Ouest
+
+[Temps Initialisation] 0.000031 secondes
+
+--- Proposition Initiale ---
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4     | PROV
+--------------------------------------------
+ P1   | 11      12      10      10     | 60
+ P2   | 17      16      15      18     | 30
+ P3   | 19      21      20      22     | 90
+--------------------------------------------
+ CMD  | 50      75      30      25     
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | 50      10      .       .      
+ P2   | .       30      .       .      
+ P3   | .       35      30      25     
+>>> Coût Total : 3035.00
+
+========================================
+ Lancement de l'optimisation (Marche-Pied)
+========================================
+
+################ ITÉRATION 1 ################
+   [Test Dégénérescence] Variables de base : 6 / 6 attendues.
+   -> Solution non dégénérée.
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4     | PROV
+--------------------------------------------
+ P1   | 11      12      10      10     | 60
+ P2   | 17      16      15      18     | 30
+ P3   | 19      21      20      22     | 90
+--------------------------------------------
+ CMD  | 50      75      30      25     
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | 50      10      .       .      
+ P2   | .       30      .       .      
+ P3   | .       35      30      25     
+>>> Coût Total : 3035.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=4, P3=9
+Vj : C1=11, C2=12, C3=11, C4=13
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | .       .       -1      -3     
+ P2   | 2       .       .       1      
+ P3   | -1      .       .       .      
+
+[Amélioration] Candidat entrée : (0, 3) avec gain marginal -3
+ -> Cycle trouvé (longueur 4)
+ -> Quantité déplacée theta = 10
+    Détails du transfert :
+    - Case P1-C4 (0) : + 10
+    - Case P3-C4 (25) : - 10
+    - Case P3-C2 (35) : + 10
+    - Case P1-C2 (10) : - 10
+
+################ ITÉRATION 2 ################
+   [Test Dégénérescence] Variables de base : 6 / 6 attendues.
+   -> Solution non dégénérée.
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4     | PROV
+--------------------------------------------
+ P1   | 11      12      10      10     | 60
+ P2   | 17      16      15      18     | 30
+ P3   | 19      21      20      22     | 90
+--------------------------------------------
+ CMD  | 50      75      30      25     
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | 50      .       .       10     
+ P2   | .       30      .       .      
+ P3   | .       45      30      15     
+>>> Coût Total : 3005.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=7, P3=12
+Vj : C1=11, C2=9, C3=8, C4=10
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | .       3       2       .      
+ P2   | -1      .       .       1      
+ P3   | -4      .       .       .      
+
+[Amélioration] Candidat entrée : (2, 0) avec gain marginal -4
+ -> Cycle trouvé (longueur 4)
+ -> Quantité déplacée theta = 15
+    Détails du transfert :
+    - Case P3-C1 (0) : + 15
+    - Case P1-C1 (50) : - 15
+    - Case P1-C4 (10) : + 15
+    - Case P3-C4 (15) : - 15
+
+################ ITÉRATION 3 ################
+   [Test Dégénérescence] Variables de base : 6 / 6 attendues.
+   -> Solution non dégénérée.
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4     | PROV
+--------------------------------------------
+ P1   | 11      12      10      10     | 60
+ P2   | 17      16      15      18     | 30
+ P3   | 19      21      20      22     | 90
+--------------------------------------------
+ CMD  | 50      75      30      25     
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | 35      .       .       25     
+ P2   | .       30      .       .      
+ P3   | 15      45      30      .      
+>>> Coût Total : 2945.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=3, P3=8
+Vj : C1=11, C2=13, C3=12, C4=10
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | .       -1      -2      .      
+ P2   | 3       .       .       5      
+ P3   | .       .       .       4      
+
+[Amélioration] Candidat entrée : (0, 2) avec gain marginal -2
+ -> Cycle trouvé (longueur 4)
+ -> Quantité déplacée theta = 30
+    Détails du transfert :
+    - Case P1-C3 (0) : + 30
+    - Case P3-C3 (30) : - 30
+    - Case P3-C1 (15) : + 30
+    - Case P1-C1 (35) : - 30
+
+################ ITÉRATION 4 ################
+   [Test Dégénérescence] Variables de base : 6 / 6 attendues.
+   -> Solution non dégénérée.
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4     | PROV
+--------------------------------------------
+ P1   | 11      12      10      10     | 60
+ P2   | 17      16      15      18     | 30
+ P3   | 19      21      20      22     | 90
+--------------------------------------------
+ CMD  | 50      75      30      25     
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | 5       .       30      25     
+ P2   | .       30      .       .      
+ P3   | 45      45      .       .      
+>>> Coût Total : 2885.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=3, P3=8
+Vj : C1=11, C2=13, C3=10, C4=10
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | .       -1      .       .      
+ P2   | 3       .       2       5      
+ P3   | .       .       2       4      
+
+[Amélioration] Candidat entrée : (0, 1) avec gain marginal -1
+ -> Cycle trouvé (longueur 4)
+ -> Quantité déplacée theta = 5
+    Détails du transfert :
+    - Case P1-C2 (0) : + 5
+    - Case P3-C2 (45) : - 5
+    - Case P3-C1 (45) : + 5
+    - Case P1-C1 (5) : - 5
+
+################ ITÉRATION 5 ################
+   [Test Dégénérescence] Variables de base : 6 / 6 attendues.
+   -> Solution non dégénérée.
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4     | PROV
+--------------------------------------------
+ P1   | 11      12      10      10     | 60
+ P2   | 17      16      15      18     | 30
+ P3   | 19      21      20      22     | 90
+--------------------------------------------
+ CMD  | 50      75      30      25     
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | .       5       30      25     
+ P2   | .       30      .       .      
+ P3   | 50      40      .       .      
+>>> Coût Total : 2880.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=4, P3=9
+Vj : C1=10, C2=12, C3=10, C4=10
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | 1       .       .       .      
+ P2   | 3       .       1       4      
+ P3   | .       .       1       3      
+
+>>> CRITÈRE D'OPTIMALITÉ ATTEINT : Solution Optimale trouvée.
+
+--- RÉSULTAT FINAL ---
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2      C3      C4     | PROV
+--------------------------------------------
+ P1   | 11      12      10      10     | 60
+ P2   | 17      16      15      18     | 30
+ P3   | 19      21      20      22     | 90
+--------------------------------------------
+ CMD  | 50      75      30      25     
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | .       5       30      25     
+ P2   | .       30      .       .      
+ P3   | 50      40      .       .      
+>>> Coût Total : 2880.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=4, P3=9
+Vj : C1=10, C2=12, C3=10, C4=10
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2      C3      C4     
+--------------------------------------
+ P1   | 1       .       .       .      
+ P2   | 3       .       1       4      
+ P3   | .       .       1       3      
+
+[Temps Optimisation] 0.003334 secondes
+
+--- FIN DE LA TRACE ---

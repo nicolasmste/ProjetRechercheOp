@@ -1,0 +1,127 @@
+============================================================
+TRACE D'EXÉCUTION GÉNÉRÉE AUTOMATIQUEMENT
+Fichier cible : traces\trace3-bh.txt
+Algorithme Initial : Balas-Hammer
+============================================================
+
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2     | PROV
+----------------------------
+ P1   | 30      20     | 600
+ P2   | 10      50     | 500
+----------------------------
+ CMD  | 100     1000   
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2     
+----------------------
+ P1   | .       .      
+ P2   | .       .      
+>>> Coût Total : 0.00
+
+[Algorithme] Balas-Hammer (VAM) - Strict
+   -> Max Pénalité: 40 (sur ligne 1) | Choix arête: (1, 0) | Quantité: 100
+   -> Max Pénalité: 50 (sur ligne 1) | Choix arête: (1, 1) | Quantité: 400
+   -> Max Pénalité: 20 (sur ligne 0) | Choix arête: (0, 1) | Quantité: 600
+
+[Temps Initialisation] 0.000088 secondes
+
+--- Proposition Initiale ---
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2     | PROV
+----------------------------
+ P1   | 30      20     | 600
+ P2   | 10      50     | 500
+----------------------------
+ CMD  | 100     1000   
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2     
+----------------------
+ P1   | .       600    
+ P2   | 100     400    
+>>> Coût Total : 33000.00
+
+========================================
+ Lancement de l'optimisation (Marche-Pied)
+========================================
+
+################ ITÉRATION 1 ################
+   [Test Dégénérescence] Variables de base : 3 / 3 attendues.
+   -> Solution non dégénérée.
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2     | PROV
+----------------------------
+ P1   | 30      20     | 600
+ P2   | 10      50     | 500
+----------------------------
+ CMD  | 100     1000   
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2     
+----------------------
+ P1   | .       600    
+ P2   | 100     400    
+>>> Coût Total : 33000.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=30
+Vj : C1=-20, C2=20
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2     
+----------------------
+ P1   | 50      .      
+ P2   | .       .      
+
+>>> CRITÈRE D'OPTIMALITÉ ATTEINT : Solution Optimale trouvée.
+
+--- RÉSULTAT FINAL ---
+
+============================================================
+          DASHBOARD DU PROBLÈME DE TRANSPORT
+============================================================
+
+--- 1. Données (Coûts | Provisions) ---
+       C1      C2     | PROV
+----------------------------
+ P1   | 30      20     | 600
+ P2   | 10      50     | 500
+----------------------------
+ CMD  | 100     1000   
+
+--- 2. Proposition de Transport (Actuelle) ---
+       C1      C2     
+----------------------
+ P1   | .       600    
+ P2   | 100     400    
+>>> Coût Total : 33000.00
+
+--- 3. Potentiels (Ui / Vj) ---
+Ui : P1=0, P2=30
+Vj : C1=-20, C2=20
+
+--- 4. Table des Coûts Marginaux (Delta) ---
+       C1      C2     
+----------------------
+ P1   | 50      .      
+ P2   | .       .      
+
+[Temps Optimisation] 0.000206 secondes
+
+--- FIN DE LA TRACE ---
